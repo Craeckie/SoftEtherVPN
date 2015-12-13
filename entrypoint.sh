@@ -9,6 +9,7 @@ if [ ! -f /opt/vpn_server.config ]; then
 printf '=%.0s' {1..24}
 echo
 echo ${USERNAME}
+echo "USERNAME: ${USERNAME}">/var/log/credentials.log
 
 if [[ $PASSWORD ]]
 then
@@ -16,6 +17,7 @@ then
 else
   PASSWORD=$(cat /dev/urandom | tr -dc '0-9' | fold -w 20 | head -n 1 | sed 's/.\{4\}/&./g;s/.$//;')
   echo ${PASSWORD}
+  echo "PASSWORD: ${PASSWORD}">>/var/log/credentials.log
 fi  
 
 printf '=%.0s' {1..24}
@@ -47,10 +49,12 @@ export PASSWORD='**'
 
 # set password for hub
 HPW=$(cat /dev/urandom | tr -dc 'A-Za-z0-9' | fold -w 16 | head -n 1)
+echo "HWP: ${HPW}">>/var/log/credentials.log
 /opt/vpncmd localhost /SERVER /HUB:DEFAULT /CSV /CMD SetHubPassword ${HPW}
 
 # set password for server
 SPW=$(cat /dev/urandom | tr -dc 'A-Za-z0-9' | fold -w 20 | head -n 1)
+echo "SWP: ${SPW}">>/var/log/credentials.log
 /opt/vpncmd localhost /SERVER /CSV /CMD ServerPasswordSet ${SPW}
 
 /opt/vpnserver stop 2>&1 > /dev/null
@@ -60,7 +64,8 @@ set +e
 while pgrep vpnserver > /dev/null; do sleep 1; done
 set -e
 
-echo [initial setup OK]
+echo '[initial setup OK]' | tee -a /var/log/credentials.log
+chmod 400 /var/log/credentials.log
 
 fi
 
